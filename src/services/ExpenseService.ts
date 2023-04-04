@@ -24,9 +24,6 @@ export class ExpenseService {
 	 */
  	quitt(expenseGroup: ExpenseGroup): void {
 		const total = Amount.zero('EUR');
-		const paymentMatrix = expenseGroup.getPaymentsMatrix(expenseGroup);
-
-		console.log(paymentMatrix);
 
 		expenseGroup.people.forEach((person: Person, index: number) => {
 			const amountPaid = expenseGroup.personPaid(person);

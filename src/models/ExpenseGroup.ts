@@ -13,7 +13,7 @@ export class ExpenseGroup {
 
 	protected balances: ExpenseGroupOwes[][] = [];
 	/** store the ids of the people for later reference when building the balances */
-//	protected personIndexInBalances: {[key: number]: number } = [];
+//	protected personIndexInBalances: {[key: number]: number } = []; // this is an object with { number: number }, not what I want
 	protected personIndexInBalances: number[] = [];
 
 	constructor(
@@ -43,36 +43,38 @@ export class ExpenseGroup {
 	}
 
 	/**
-	 * 
-	 * [
-	 *   [ 0, 2125, 2100, 0 ],
-	 *   [ 625, 0, 2100, 0 ],
-	 *   [ 625, 2125, 0, 0 ],
-	 *   [ 625, 2125, 2100, 0 ]
-	 * ]
+	 *  This is the "who owes whom what amount matrix"
+	 * [	A 		B 		C 		D
+	 *  A [ 0,		2125, 	2100,	0 ], <-- owes, e.g. A owes B 2125, C 2100 and D 0 
+	 *  B [ 625,	0,		2100,	0 ],
+	 *  C [ 625,	2125,	0,		0 ],
+	 *  D [ 625,	2125,	2100,	0 ]
+	 * ]	 ^
+	 * 		 |
+	 * 		loans E.g. A loaned 625 to B, C and D
 	 */  
-	public getPaymentsMatrix(expenseGroup: ExpenseGroup): ExpenseGroupOwes[][]
+	public getPaymentsMatrix(): ExpenseGroupOwes[][]
 	{
-		const balances: ExpenseGroupOwes[][] = Array(expenseGroup.people.length);
+		const balances: ExpenseGroupOwes[][] = Array(this.people.length);
 
-		for (let indexBorrows = 0; indexBorrows < expenseGroup.people.length; indexBorrows++) {
-			balances[indexBorrows] = Array(expenseGroup.people.length);
+		for (let indexBorrows = 0; indexBorrows < this.people.length; indexBorrows++) {
+			balances[indexBorrows] = Array(this.people.length);
 			this.personIndexInBalances[indexBorrows] = this.people[indexBorrows].id;
-			for (let indexLends = 0; indexLends < expenseGroup.people.length; indexLends++) {
+			for (let indexLends = 0; indexLends < this.people.length; indexLends++) {
 				balances[indexBorrows][indexLends] = {
 					direction: 'owes',
 					amount: Amount.zero('EUR'),
-					from: expenseGroup.people[indexBorrows],
-					to: expenseGroup.people[indexLends],
+					from: this.people[indexBorrows],
+					to: this.people[indexLends],
 				};
 				if (indexBorrows === indexLends) {
 					continue;
 				}
 				balances[indexBorrows][indexLends].amount.add(
-					expenseGroup.personPaid(
-						expenseGroup.people[indexLends]
+					this.personPaid(
+						this.people[indexLends]
 					).divide(
-						Amount.create('EUR', 4)
+						Amount.create('EUR', this.people.length)
 					)
 				);
 			}
@@ -81,38 +83,39 @@ export class ExpenseGroup {
 		return balances;	
 	}
 
+	getOwesFolded(person: Person): Amount {
+		const owes = this.getOwes(person);
+
+		if (owes.length === 0) {
+			return Amount.zero('EUR');
+		}
+
+		return owes.map((previousValue: ExpenseGroupOwes): Amount => {
+			return previousValue.amount;
+		}).reduce((previousValue: Amount, currentValue: Amount): Amount => {
+			return previousValue.add(currentValue);
+		});
+	}
+
 	/**
 	 * what does this person owe?
 	 * 
 	 */
 	public getOwes(person: Person): ExpenseGroupOwes[] {
-		const matrix = this.getPaymentsMatrix(this);
+		const matrix = this.getPaymentsMatrix();
 		const totalExpensePerPerson = this.shareOfExpenses(person);
 		const personPaid = this.personPaid(person);
 
-		// todo greater than equal to
-		if (personPaid.compare(totalExpensePerPerson) === AmountComparision.GreaterThan) {
+		if (
+			personPaid.compare(totalExpensePerPerson) === AmountComparision.GreaterThan
+			|| personPaid.compare(totalExpensePerPerson) === AmountComparision.EqualTo
+		) {
 			return []; // or reverse the owes
 		}
 
 		const index = this.personIndexInBalances.indexOf(person.id);
 
 		return matrix[index];
-
-		// switch (personPaid.compare(totalExpensePerPerson)) {
-		// 	case AmountComparision.EqualTo:
-		// 		return {direction: 'owed', amount: Amount.zero(totalExpensePerPerson.currency)};
-
-		// 	case AmountComparision.GreaterThan:
-		// 		// they get money
-		// 		return {direction: 'owed', amount: personPaid.subtract(totalExpensePerPerson)};
-
-		// 	case AmountComparision.LessThan:
-		// 		// they must pay money
-		// 		return {direction: 'owes', amount: totalExpensePerPerson.subtract(personPaid)};
-		// }
-
-		// return {direction: 'owed', amount: Amount.zero(totalExpensePerPerson.currency)};
 	}
 
 	public shareOfExpenses(person: Person): Amount {

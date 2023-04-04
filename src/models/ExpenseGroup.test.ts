@@ -25,10 +25,10 @@ it('passes a basic test, two people same amount paid, nothing owed', () => {
 	expect(expenseGroup.getTotalExpenses().compare(Amount.create('EUR', 4000)))
 		.toEqual(AmountComparision.EqualTo);
 
-	expect(expenseGroup.getOwes(groupOfPeople[0])[0].amount.compare(Amount.zero('EUR')))
+	expect(expenseGroup.getOwesFolded(groupOfPeople[0]).compare(Amount.zero('EUR')))
 		.toEqual(AmountComparision.EqualTo);
 
-	expect(expenseGroup.getOwes(groupOfPeople[1])[1].amount.compare(Amount.zero('EUR')))
+	expect(expenseGroup.getOwesFolded(groupOfPeople[1]).compare(Amount.zero('EUR')))
 		.toEqual(AmountComparision.EqualTo);
 });
 
@@ -69,13 +69,11 @@ it('passes a more advanced test', () => {
 	expect(owes.direction).toEqual('owes');
 	expect(owes.amount.amount).toEqual(0);
 
+	expect(expenseGroup.getOwesFolded(groupOfPeople[0]).amount).toEqual(2125 + 2100);
+
 	expect(expenseGroup.getOwes(groupOfPeople[1])).toHaveLength(0);
-	// expect(owes.direction).toEqual('owed');
-	// expect(owes.amount.amount).toEqual(3650);
 
 	expect(expenseGroup.getOwes(groupOfPeople[2])).toHaveLength(0);
-	// expect(owes.direction).toEqual('owed');
-	// expect(owes.amount.amount).toEqual(3550);
 
 	owes = expenseGroup.getOwes(groupOfPeople[3])[0];
 	expect(owes.direction).toEqual('owes');

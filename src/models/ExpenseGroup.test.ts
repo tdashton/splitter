@@ -25,10 +25,10 @@ it('passes a basic test, two people same amount paid, nothing owed', () => {
 	expect(expenseGroup.getTotalExpenses().compare(Amount.create('EUR', 4000)))
 		.toEqual(AmountComparision.EqualTo);
 
-	expect(expenseGroup.getOwes(groupOfPeople[0]).amount.compare(Amount.zero('EUR')))
+	expect(expenseGroup.getOwes(groupOfPeople[0])[0].amount.compare(Amount.zero('EUR')))
 		.toEqual(AmountComparision.EqualTo);
 
-	expect(expenseGroup.getOwes(groupOfPeople[1]).amount.compare(Amount.zero('EUR')))
+	expect(expenseGroup.getOwes(groupOfPeople[1])[1].amount.compare(Amount.zero('EUR')))
 		.toEqual(AmountComparision.EqualTo);
 });
 
@@ -57,19 +57,35 @@ it('passes a more advanced test', () => {
 	expect(expenseGroup.getTotalExpenses().compare(Amount.create('EUR', 19400)))
 		.toEqual(AmountComparision.EqualTo);
 
-	let owes = expenseGroup.getOwes(groupOfPeople[0]);
+	let owes = expenseGroup.getOwes(groupOfPeople[0])[1];
 	expect(owes.direction).toEqual('owes');
-	expect(owes.amount.amount).toEqual(2350);
+	expect(owes.amount.amount).toEqual(2125);
 
-	owes = expenseGroup.getOwes(groupOfPeople[1]);
-	expect(owes.direction).toEqual('owed');
-	expect(owes.amount.amount).toEqual(3650);
-
-	owes = expenseGroup.getOwes(groupOfPeople[2]);
-	expect(owes.direction).toEqual('owed');
-	expect(owes.amount.amount).toEqual(3550);
-
-	owes = expenseGroup.getOwes(groupOfPeople[3]);
+	owes = expenseGroup.getOwes(groupOfPeople[0])[2];
 	expect(owes.direction).toEqual('owes');
-	expect(owes.amount.amount).toEqual(4850);
+	expect(owes.amount.amount).toEqual(2100);
+
+	owes = expenseGroup.getOwes(groupOfPeople[0])[3];
+	expect(owes.direction).toEqual('owes');
+	expect(owes.amount.amount).toEqual(0);
+
+	expect(expenseGroup.getOwes(groupOfPeople[1])).toHaveLength(0);
+	// expect(owes.direction).toEqual('owed');
+	// expect(owes.amount.amount).toEqual(3650);
+
+	expect(expenseGroup.getOwes(groupOfPeople[2])).toHaveLength(0);
+	// expect(owes.direction).toEqual('owed');
+	// expect(owes.amount.amount).toEqual(3550);
+
+	owes = expenseGroup.getOwes(groupOfPeople[3])[0];
+	expect(owes.direction).toEqual('owes');
+	expect(owes.amount.amount).toEqual(625);
+
+	owes = expenseGroup.getOwes(groupOfPeople[3])[1];
+	expect(owes.direction).toEqual('owes');
+	expect(owes.amount.amount).toEqual(2125);
+
+	owes = expenseGroup.getOwes(groupOfPeople[3])[2];
+	expect(owes.direction).toEqual('owes');
+	expect(owes.amount.amount).toEqual(2100);
 });
